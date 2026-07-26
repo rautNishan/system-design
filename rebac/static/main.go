@@ -199,7 +199,7 @@ func main() {
 	store := &InMemoryStore{tuples: []Tuple{
 		{Object: "doc:readme", Relation: "owner", User: "nishan"},
 		{Object: "doc:readme", Relation: "parent", User: "folder:eng"},
-		{Object: "folder:eng", Relation: "viewer", User: "sagar"},
+		{Object: "folder:eng", Relation: "viewer", User: "hehe"},
 	}}
 
 	checker := &Checker{Store: store, Namespace: DocNamespace()}
