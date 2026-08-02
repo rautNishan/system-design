@@ -1,0 +1,17 @@
+package main
+
+import (
+	"fmt"
+	"net/url"
+
+	gowebsocket "github.com/rautNishan/system-design/go-websocket"
+)
+
+func main() {
+	url := url.URL{Scheme: "ws", Host: "localhost:3000", Path: "ws"}
+	socket, err := gowebsocket.NewWebSocket(url.String())
+	if err != nil {
+		fmt.Println("Error while connectiong: %+v", err)
+	}
+	fmt.Println(socket)
+}
