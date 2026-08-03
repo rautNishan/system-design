@@ -14,6 +14,7 @@ func helloWorld(w http.ResponseWriter, r *http.Request) {
 }
 
 func serverSocket(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Incoming request in socket")
 	socket, err := gowebsocket.NewServerWebSocket(w, r)
 	if err != nil {
 		fmt.Errorf("Error while createing socket: %+v", err)
