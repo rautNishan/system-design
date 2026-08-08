@@ -19,7 +19,6 @@ func NewWebSocket(host string) (*Conn, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Invalud URL")
 	}
-
 	//Need to impement wss and proxy on the client side
 	conn, err := net.Dial("tcp", url.Host)
 	if err != nil {

@@ -20,10 +20,19 @@ func serverSocket(w http.ResponseWriter, r *http.Request) {
 		fmt.Errorf("Error while createing socket: %+v", err)
 	}
 	fmt.Println(socket)
+	// go handleWebSocketCommunication(socket)
 }
 
 func main() {
 	http.HandleFunc("/", helloWorld)
 	http.HandleFunc("/ws", serverSocket)
-	http.ListenAndServe("localhost:3000", nil)
+	err := http.ListenAndServe("localhost:3000", nil)
+	if err != nil {
+		panic(err)
+	}
+	return
 }
+
+// func handleWebSocketCommunication(*gowebsocket.Conn) {
+
+// }

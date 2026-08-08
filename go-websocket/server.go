@@ -68,7 +68,6 @@ func upgrade(w http.ResponseWriter, r *http.Request, responseHeader http.Header)
 	// From here on we are fully responsible for every byte on the wire — no more
 	// automatic headers, no automatic Content-Length, nothing from net/http.
 	accept := computeAcceptKey(key)
-
 	var sb strings.Builder
 	sb.WriteString("HTTP/1.1 101 Switching Protocols\r\n")
 	sb.WriteString("Upgrade: websocket\r\n")

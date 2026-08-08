@@ -16,3 +16,6 @@ func newConnection(conn net.Conn, isServer bool) *Conn {
 	}
 	return c
 }
+
+func (c *Conn) Write() {}
+func (c *Conn) Read()  {}
