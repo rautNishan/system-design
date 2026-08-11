@@ -14,4 +14,8 @@ func main() {
 		fmt.Printf("Error while connectiong: %+v", err)
 	}
 	fmt.Println(socket)
+	data := make([]byte, 2)
+	data = append(data, 'h')
+	data = append(data, 'i')
+	socket.Write(data)
 }
