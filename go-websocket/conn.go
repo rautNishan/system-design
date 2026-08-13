@@ -60,7 +60,7 @@ func (c *Conn) makeClientFrame(data []byte) Frame {
 	return payload
 }
 
-func (f Frame) Encode() []byte {
+func (f Frame) encode() []byte {
 
 	b0 := byte(f.Opcode) //4 bits exactly so if opcode is 1 (0000 0001)
 
@@ -87,18 +87,109 @@ func (f Frame) Encode() []byte {
 		header[1] = 126
 		binary.BigEndian.PutUint16(header[2:4], uint16(f.PayloadLen))
 	default:
-		header = make([]byte, 4)
+		header = make([]byte, 10)
 		header[0] = b0
 		header[1] = 127
 		binary.BigEndian.PutUint64(header[2:4], f.PayloadLen)
 	}
-
-	
+	var body []byte
+	if f.Mask {
+		header[1] |= 0x80
+		header = append(header, f.MaskingKey[:]...)
+		body = make([]byte, len(f.Payload))
+		for i, b := range f.Payload {
+			body[i] = b ^ f.MaskingKey[i%4]
+		}
+	} else {
+		body = f.Payload
+	}
+	return append(header, body...)
 }
 
-func (c *Conn) Write(data []byte) {
+func (c *Conn) Write(data []byte) error {
 	frame := c.makeClientFrame(data)
-	c.conn.Write(frame)
+	_, err := c.conn.Write(frame.encode())
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
-func (c *Conn) Read() {}
+func (c *Conn) Read() ([]byte, error) {
+	frame, err := c.readFromConn()
+	if err != nil {
+		return nil, err
+	}
+	return frame.Payload, nil
+}
+
+func (c *Conn) readFromConn() (Frame, error) {
+	var f Frame
+	// Read the first 2 bytes
+	header := make([]byte, 2)
+	err := c.readFull(header)
+	if err != nil {
+		return Frame{}, err
+	}
+	b0 := header[0]
+	b1 := header[1]
+
+	f.FIN = b0&0x80 != 0
+	f.RSV1 = b0&0x40 != 0
+	f.RSV2 = b0&0x20 != 0
+	f.RSV3 = b0&0x10 != 0
+
+	f.Opcode = Opcode(b0 & 0x0F)
+
+	f.Mask = b1&0x80 != 0
+	lenField := b1 & 0x7F
+	switch {
+	case lenField <= 125:
+		f.PayloadLen = uint64(lenField)
+	case lenField == 126:
+		ext := make([]byte, 2)
+		err := c.readFull(ext)
+		if err != nil {
+			return Frame{}, err
+		}
+		f.PayloadLen = uint64(binary.BigEndian.Uint16(ext))
+	case lenField == 127:
+		ext := make([]byte, 8)
+		err := c.readFull(ext)
+		if err != nil {
+			return Frame{}, err
+		}
+		f.PayloadLen = uint64(binary.BigEndian.Uint16(ext))
+	}
+	if f.Mask {
+		err := c.readFull(f.MaskingKey[:])
+		if err != nil {
+			return Frame{}, err
+		}
+	}
+	payload := make([]byte, f.PayloadLen)
+	err = c.readFull(payload)
+	if err != nil {
+		return Frame{}, err
+	}
+
+	if f.Mask {
+		for i := range payload {
+			payload[i] ^= f.MaskingKey[i%4]
+		}
+	}
+	f.Payload = payload
+	return f, nil
+}
+
+func (c *Conn) readFull(buf []byte) error {
+	totalRead := 0
+	for totalRead < len(buf) {
+		n, err := c.conn.Read(buf[totalRead:])
+		if err != nil {
+			return err
+		}
+		totalRead += n
+	}
+	return nil
+}

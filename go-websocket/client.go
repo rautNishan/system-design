@@ -1,6 +1,7 @@
 package gowebsocket
 
 import (
+	"bufio"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
@@ -46,7 +47,15 @@ func NewWebSocket(host string) (*Conn, error) {
 		conn.Close()
 		return nil, fmt.Errorf("error writing handshake request: %w", err)
 	}
-
+	resp, err := http.ReadResponse(bufio.NewReader(conn), &request)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusSwitchingProtocols {
+		conn.Close()
+		return nil, fmt.Errorf("unexpected handshake status: %s", resp.Status)
+	}
 	c := newConnection(conn, false)
 	return c, nil
 }

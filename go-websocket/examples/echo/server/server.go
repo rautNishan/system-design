@@ -20,7 +20,7 @@ func serverSocket(w http.ResponseWriter, r *http.Request) {
 		fmt.Errorf("Error while createing socket: %+v", err)
 	}
 	fmt.Println(socket)
-	// go handleWebSocketCommunication(socket)
+	go handleWebSocketCommunication(socket)
 }
 
 func main() {
@@ -30,9 +30,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	return
 }
 
-// func handleWebSocketCommunication(*gowebsocket.Conn) {
-
-// }
+func handleWebSocketCommunication(socket *gowebsocket.Conn) {
+	data, err := socket.Read()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Server side Data: %s\n", string(data))
+	socket.Write(data)
+}

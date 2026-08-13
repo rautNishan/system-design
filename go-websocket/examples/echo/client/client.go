@@ -18,4 +18,9 @@ func main() {
 	data = append(data, 'h')
 	data = append(data, 'i')
 	socket.Write(data)
+	data, err = socket.Read()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Printf("Client side data: %s\n", string(data))
 }
