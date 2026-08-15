@@ -10,6 +10,12 @@ type Conn struct {
 	isServer bool
 }
 
+type Socket interface {
+	Read() ([]byte, error)
+	Write([]byte) error
+	Close() error
+}
+
 func newConnection(conn net.Conn, isServer bool) *Conn {
 	c := &Conn{
 		conn:     conn,
@@ -190,6 +196,14 @@ func (c *Conn) readFull(buf []byte) error {
 			return err
 		}
 		totalRead += n
+	}
+	return nil
+}
+
+func (c *Conn) Close() error {
+	err := c.conn.Close()
+	if err != nil {
+		return err
 	}
 	return nil
 }

@@ -14,7 +14,7 @@ import (
 const magicGUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 // NewServerWebSocket is the public entrypoint your handler calls.
-func NewServerWebSocket(w http.ResponseWriter, r *http.Request) (*Conn, error) {
+func NewServerWebSocket(w http.ResponseWriter, r *http.Request) (Socket, error) {
 	return upgrade(w, r, nil)
 }
 

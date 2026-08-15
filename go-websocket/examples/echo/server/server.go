@@ -32,7 +32,7 @@ func main() {
 	}
 }
 
-func handleWebSocketCommunication(socket *gowebsocket.Conn) {
+func handleWebSocketCommunication(socket gowebsocket.Socket) {
 	data, err := socket.Read()
 	if err != nil {
 		panic(err)

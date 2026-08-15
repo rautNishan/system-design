@@ -23,4 +23,5 @@ func main() {
 		panic(err)
 	}
 	fmt.Printf("Client side data: %s\n", string(data))
+	defer socket.Close()
 }

@@ -15,7 +15,7 @@ import (
 // 	conn *Conn
 // }
 
-func NewWebSocket(host string) (*Conn, error) {
+func NewWebSocket(host string) (Socket, error) {
 	url, err := url.Parse(host)
 	if err != nil {
 		return nil, fmt.Errorf("Invalud URL")
