@@ -1,6 +1,7 @@
 package gowebsocket
 
 import (
+	"crypto/rand"
 	"encoding/binary"
 	"net"
 )
@@ -8,6 +9,7 @@ import (
 type Conn struct {
 	conn     net.Conn
 	isServer bool
+	opcode   Opcode
 }
 
 type Socket interface {
@@ -16,10 +18,11 @@ type Socket interface {
 	Close() error
 }
 
-func newConnection(conn net.Conn, isServer bool) *Conn {
+func newConnection(conn net.Conn, isServer bool, opcode Opcode) *Conn {
 	c := &Conn{
 		conn:     conn,
 		isServer: isServer,
+		opcode:   opcode,
 	}
 	return c
 }
@@ -52,13 +55,17 @@ func (c *Conn) parseIncomingRequest() {
 
 // TODO implement continious stream
 func (c *Conn) makeClientFrame(data []byte) Frame {
+	var key [4]byte
+	if _, err := rand.Read(key[:]); err != nil {
+		return Frame{}
+	}
 	payload := Frame{
 		FIN:        true,
 		RSV1:       false,
 		RSV2:       false,
 		RSV3:       false,
-		Opcode:     OpText,
-		Mask:       false,
+		Opcode:     c.opcode,
+		Mask:       true,
 		PayloadLen: uint64(len(data)),
 		MaskingKey: [4]byte{},
 		Payload:    data,

@@ -10,12 +10,11 @@ import (
 	"net/url"
 )
 
-// type WebScoket struct {
-// 	Host string
-// 	conn *Conn
-// }
+func NewWebSocket(host string, opcode Opcode) (Socket, error) {
+	if opcode > 0xF {
+		return nil, fmt.Errorf("invalid opcode: %#x", opcode)
+	}
 
-func NewWebSocket(host string) (Socket, error) {
 	url, err := url.Parse(host)
 	if err != nil {
 		return nil, fmt.Errorf("Invalud URL")
@@ -56,7 +55,7 @@ func NewWebSocket(host string) (Socket, error) {
 		conn.Close()
 		return nil, fmt.Errorf("unexpected handshake status: %s", resp.Status)
 	}
-	c := newConnection(conn, false)
+	c := newConnection(conn, false, opcode)
 	return c, nil
 }
 

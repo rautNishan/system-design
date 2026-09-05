@@ -9,7 +9,7 @@ import (
 
 func main() {
 	url := url.URL{Scheme: "ws", Host: "localhost:3000", Path: "ws"}
-	socket, err := gowebsocket.NewWebSocket(url.String())
+	socket, err := gowebsocket.NewWebSocket(url.String(), 1)
 	if err != nil {
 		fmt.Printf("Error while connectiong: %+v", err)
 	}
