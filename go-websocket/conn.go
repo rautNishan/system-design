@@ -3,7 +3,14 @@ package gowebsocket
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"errors"
 	"net"
+	"time"
+)
+
+var (
+	ErrUnmaskedFrame         = errors.New("gowebsocket: received unmasked frame from client")
+	ErrMaskedFrameFromServer = errors.New("gowebsocket: received masked frame from server")
 )
 
 type Conn struct {
@@ -49,10 +56,6 @@ const (
 	OpPong         Opcode = 0xA
 )
 
-func (c *Conn) parseIncomingRequest() {
-
-}
-
 // TODO implement continious stream
 func (c *Conn) makeClientFrame(data []byte) Frame {
 	var key [4]byte
@@ -76,7 +79,6 @@ func (c *Conn) makeClientFrame(data []byte) Frame {
 func (f Frame) encode() []byte {
 
 	b0 := byte(f.Opcode) //4 bits exactly so if opcode is 1 (0000 0001)
-
 	if f.FIN {
 		b0 |= 0x80
 	}
@@ -144,6 +146,7 @@ func (c *Conn) readFromConn() (Frame, error) {
 	if err != nil {
 		return Frame{}, err
 	}
+
 	b0 := header[0]
 	b1 := header[1]
 
@@ -156,6 +159,11 @@ func (c *Conn) readFromConn() (Frame, error) {
 
 	f.Mask = b1&0x80 != 0
 	lenField := b1 & 0x7F
+	if c.isServer && !f.Mask {
+		c.closeWithCode(OpClose, "Frame must be masked")
+		return Frame{}, ErrUnmaskedFrame
+	}
+
 	switch {
 	case lenField <= 125:
 		f.PayloadLen = uint64(lenField)
@@ -175,22 +183,25 @@ func (c *Conn) readFromConn() (Frame, error) {
 		f.PayloadLen = uint64(binary.BigEndian.Uint16(ext))
 	}
 	if f.Mask {
-		err := c.readFull(f.MaskingKey[:])
+		err = c.readFull(f.MaskingKey[:])
 		if err != nil {
 			return Frame{}, err
 		}
 	}
+
 	payload := make([]byte, f.PayloadLen)
 	err = c.readFull(payload)
 	if err != nil {
 		return Frame{}, err
 	}
 
+	//Because server does not need to mask
 	if f.Mask {
 		for i := range payload {
 			payload[i] ^= f.MaskingKey[i%4]
 		}
 	}
+
 	f.Payload = payload
 	return f, nil
 }
@@ -213,4 +224,17 @@ func (c *Conn) Close() error {
 		return err
 	}
 	return nil
+}
+
+func (c *Conn) closeWithCode(code Opcode, message string) {
+	defer c.Close()
+	frame := Frame{
+		FIN:        true,
+		Opcode:     code,
+		Mask:       !c.isServer,
+		PayloadLen: uint64(len(message)),
+		Payload:    []byte(message),
+	}
+	c.conn.Write(frame.encode())
+	time.Sleep(200 * time.Millisecond)
 }

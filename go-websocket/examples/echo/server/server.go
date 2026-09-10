@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 
@@ -8,24 +9,27 @@ import (
 )
 
 func helloWorld(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Incoming request")
 	fmt.Printf("%+v\n", r)
 	w.Write([]byte("hi\n"))
 }
 
 func serverSocket(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("Incoming request in socket")
 	socket, err := gowebsocket.NewServerWebSocket(w, r)
+
 	if err != nil {
-		fmt.Errorf("Error while createing socket: %+v", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
-	fmt.Println(socket)
+	if socket == nil {
+		return
+	}
 	go handleWebSocketCommunication(socket)
 }
 
 func main() {
 	http.HandleFunc("/", helloWorld)
 	http.HandleFunc("/ws", serverSocket)
+	fmt.Println("Listing on port 3000")
 	err := http.ListenAndServe("localhost:3000", nil)
 	if err != nil {
 		panic(err)
@@ -35,7 +39,10 @@ func main() {
 func handleWebSocketCommunication(socket gowebsocket.Socket) {
 	data, err := socket.Read()
 	if err != nil {
-		panic(err)
+		if errors.Is(err, gowebsocket.ErrUnmaskedFrame) {
+			fmt.Println("Frame not masked")
+		}
+		return
 	}
 	fmt.Printf("Server side Data: %s\n", string(data))
 	socket.Write(data)

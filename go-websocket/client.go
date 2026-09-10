@@ -53,7 +53,7 @@ func NewWebSocket(host string, opcode Opcode) (Socket, error) {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusSwitchingProtocols {
 		conn.Close()
-		return nil, fmt.Errorf("unexpected handshake status: %s", resp.Status)
+		return nil, fmt.Errorf("unexpected handshake status: %v", resp)
 	}
 	c := newConnection(conn, false, opcode)
 	return c, nil
