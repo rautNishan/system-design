@@ -183,7 +183,7 @@ func (c *Conn) readFromConn() (Frame, error) {
 		f.PayloadLen = uint64(binary.BigEndian.Uint16(ext))
 	}
 	if f.Mask {
-		err = c.readFull(f.MaskingKey[:])
+		err := c.readFull(f.MaskingKey[:])
 		if err != nil {
 			return Frame{}, err
 		}
