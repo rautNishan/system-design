@@ -2,6 +2,12 @@ package main
 
 import "fmt"
 
+func co_yeild()
+
 func main() {
-	fmt.Println("This is main function")
+	co_yeild()
+}
+
+func test(rsp uintptr) {
+	fmt.Printf("%#x\n", rsp)
 }
